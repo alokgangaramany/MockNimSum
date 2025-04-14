@@ -1,4 +1,3 @@
-pip install langchain langchain-community langchain-openai openai faiss-cpu tiktoken pandas
 import streamlit as st
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain.chains import RetrievalQA

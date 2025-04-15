@@ -13,8 +13,9 @@ st.set_page_config(page_title="NimSum Insights Chatbot", layout="wide")
 st.title("🤖 NimSum Terminal: Deep Tech Insights AI")
 
 # Config
-AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY")  # set in .env or Streamlit secrets
-BASE_ID = "Main"
+AIRTABLE_API_KEY = st.secrets["AIRTABLE_API_KEY"] # set in .env or Streamlit secrets
+
+BASE_ID = "appXEj7umXOt9b2XP"
 TABLE_NAME = "Report"
 
 table = Table(AIRTABLE_API_KEY, BASE_ID, TABLE_NAME)

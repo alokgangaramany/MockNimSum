@@ -21,9 +21,9 @@ table = Table(AIRTABLE_API_KEY, BASE_ID, TABLE_NAME)
 records = table.all()
 
 # --- SIDEBAR SETUP ---
-st.sidebar.header("🔐 API Setup")
-openai_api_key = st.sidebar.text_input("Enter your OpenAI API Key", type="password")
-uploaded_file = st.sidebar.file_uploader("Upload CSV file", type=["csv"])
+# st.sidebar.header("🔐 API Setup")
+# openai_api_key = st.sidebar.text_input("Enter your OpenAI API Key", type="password")
+# uploaded_file = st.sidebar.file_uploader("Upload CSV file", type=["csv"])
 
 # --- PROCESS CSV INTO VECTORSTORE ---
 @st.cache_resource(show_spinner=False)

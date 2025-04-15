@@ -64,8 +64,9 @@ if not OPENAI_API_KEY or not AIRTABLE_API_KEY:
     st.error("🔐 Missing API keys. Please check your Streamlit secrets.")
 else:
     with st.spinner("🔄 Loading market insights from Airtable and PDFs..."):
-        vectorstore = build_vectorstore(AIRTABLE_API_KEY, BASE_ID, TABLE_NAME)
-
+#        vectorstore = build_vectorstore(AIRTABLE_API_KEY, BASE_ID, TABLE_NAME)
+        embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
+        vectorstore = FAISS.load_local("vectorstore_index", embeddings)
     llm = ChatOpenAI(temperature=0, model_name="gpt-4", openai_api_key=OPENAI_API_KEY)
     qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=vectorstore.as_retriever())
 

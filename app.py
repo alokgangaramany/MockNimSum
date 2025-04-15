@@ -4,12 +4,21 @@ from langchain.chains import RetrievalQA
 from langchain.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.docstore.document import Document
+from pyairtable import Table
 import pandas as pd
 import os
 
 # --- CONFIG ---
 st.set_page_config(page_title="NimSum Insights Chatbot", layout="wide")
 st.title("🤖 NimSum Terminal: Deep Tech Insights AI")
+
+# Config
+AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY")  # set in .env or Streamlit secrets
+BASE_ID = "Main"
+TABLE_NAME = "Report"
+
+table = Table(AIRTABLE_API_KEY, BASE_ID, TABLE_NAME)
+records = table.all()
 
 # --- SIDEBAR SETUP ---
 st.sidebar.header("🔐 API Setup")
@@ -19,7 +28,9 @@ uploaded_file = st.sidebar.file_uploader("Upload CSV file", type=["csv"])
 # --- PROCESS CSV INTO VECTORSTORE ---
 @st.cache_resource(show_spinner=False)
 def process_csv(file, api_key):
-    df = pd.read_csv(file)
+
+    df = pd.DataFrame([r["fields"] for r in records])
+#    df = pd.read_csv(file)
     docs = []
     for _, row in df.iterrows():
         content = "\n".join([f"{col}: {row[col]}" for col in row.index if pd.notna(row[col])])

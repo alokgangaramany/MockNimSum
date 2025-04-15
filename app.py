@@ -70,13 +70,17 @@ else:
     llm = ChatOpenAI(temperature=0, model_name="gpt-4", openai_api_key=OPENAI_API_KEY)
     qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=vectorstore.as_retriever())
 
+
+    # ✅ NEW: handle query from Softr (URL parameter)
+    query_param = st.query_params.get("query")
     query = st.text_input("💬 Ask a question about the market reports:", placeholder="e.g., What are the growth trends in AI diagnostics?")
     if query:
         with st.spinner("🤖 Thinking..."):
             result = qa_chain.run(query)
             st.markdown("### 🧠 Insight")
             st.write(result)
-
+    else:
+        st.info("Ask a question to explore insights across all reports.")
 
 # import streamlit as st
 # from langchain_openai import ChatOpenAI, OpenAIEmbeddings

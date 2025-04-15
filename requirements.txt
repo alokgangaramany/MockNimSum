@@ -8,3 +8,4 @@ tiktoken
 pandas
 python-dotenv  # if you later want to manage secrets
 pyairtable
+PyPDF2

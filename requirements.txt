@@ -7,3 +7,4 @@ faiss-cpu
 tiktoken
 pandas
 python-dotenv  # if you later want to manage secrets
+pyairtable

@@ -8,54 +8,52 @@ from pyairtable import Table
 import pandas as pd
 import os
 
-# --- CONFIG ---
-st.set_page_config(page_title="NimSum Insights Chatbot", layout="wide")
-st.title("🤖 NimSum Terminal: Deep Tech Insights AI")
+# --- PAGE CONFIG ---
+st.set_page_config(page_title="NimSum Insights AI", layout="wide")
+st.title("🤖 NimSum Terminal: Deep Tech Insights Chatbot")
 
-# Config
-AIRTABLE_API_KEY = st.secrets["AIRTABLE_API_KEY"] # set in .env or Streamlit secrets
+# --- LOAD SECRETS ---
+OPENAI_API_KEY = st.secrets.get("openai_api_key")
+AIRTABLE_API_KEY = st.secrets.get("AIRTABLE_API_KEY")
+BASE_ID = "appXEj7umXOt9b2XP"  # Replace with your real Base ID
+TABLE_NAME = "Report"           # Replace with your table name
 
-BASE_ID = "appXEj7umXOt9b2XP"
-TABLE_NAME = "Report"
+# --- FETCH & CACHE AIRTABLE RECORDS ---
+@st.cache_data(show_spinner=False)
+def fetch_airtable_records(api_key, base_id, table_name):
+    table = Table(api_key, base_id, table_name)
+    records = table.all()
+    st.write(f"✅ Retrieved {len(records)} rows from Airtable")
+    return [r["fields"] for r in records]
 
-table = Table(AIRTABLE_API_KEY, BASE_ID, TABLE_NAME)
-records = table.all()
-
-# --- SIDEBAR SETUP ---
-# st.sidebar.header("🔐 API Setup")
-# openai_api_key = st.sidebar.text_input("Enter your OpenAI API Key", type="password")
-# uploaded_file = st.sidebar.file_uploader("Upload CSV file", type=["csv"])
-
-# --- PROCESS CSV INTO VECTORSTORE ---
-@st.cache_resource(show_spinner=False)
-def process_csv(file, api_key):
-
-    df = pd.DataFrame([r["fields"] for r in records])
-#    df = pd.read_csv(file)
+# --- BUILD VECTORSTORE ---
+@st.cache_resource(show_spinner=True)
+def build_vectorstore(record_fields, api_key):
     docs = []
-    for _, row in df.iterrows():
-        content = "\n".join([f"{col}: {row[col]}" for col in row.index if pd.notna(row[col])])
+    for fields in record_fields:
+        content = "\n".join([f"{k}: {v}" for k, v in fields.items() if v])
         docs.append(Document(page_content=content))
 
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
-    split_docs = text_splitter.split_documents(docs)
+    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+    chunks = splitter.split_documents(docs)
     embeddings = OpenAIEmbeddings(openai_api_key=api_key)
-    vectorstore = FAISS.from_documents(split_docs, embeddings)
-    return vectorstore
+    return FAISS.from_documents(chunks, embeddings)
 
-# --- MAIN CHAT UI ---
-if openai_api_key and uploaded_file:
-    with st.spinner("Indexing CSV and building AI..."):
-        vectorstore = process_csv(uploaded_file, openai_api_key)
-        llm = ChatOpenAI(temperature=0, model_name="gpt-4", openai_api_key=openai_api_key)
-        qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=vectorstore.as_retriever())
-
-    st.success("AI is ready! Ask your question below.")
-    query = st.text_input("💬 Ask a question about the market report:", placeholder="e.g., What are key investment trends in AI diagnostics?")
-    if query:
-        with st.spinner("Thinking..."):
-            result = qa_chain.run(query)
-            st.markdown("### 🧠 Answer")
-            st.write(result)
+# --- MAIN EXECUTION ---
+if not OPENAI_API_KEY or not AIRTABLE_API_KEY:
+    st.error("🔐 Missing API keys. Please add them to Streamlit secrets.")
 else:
-    st.info("Please upload a CSV file and enter your OpenAI API key to get started.")
+    with st.spinner("📡 Fetching and embedding Airtable data..."):
+        record_fields = fetch_airtable_records(AIRTABLE_API_KEY, BASE_ID, TABLE_NAME)
+        st.success(f"📄 Loaded {len(record_fields)} Airtable records.")
+        vectorstore = build_vectorstore(record_fields, OPENAI_API_KEY)
+
+    llm = ChatOpenAI(temperature=0, model_name="gpt-4", openai_api_key=OPENAI_API_KEY)
+    qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=vectorstore.as_retriever())
+
+    query = st.text_input("💬 Ask your question:", placeholder="e.g., What are the key trends in AI diagnostics?")
+    if query:
+        with st.spinner("🤖 Thinking..."):
+            result = qa_chain.run(query)
+            st.markdown("### 🧠 AI Insight")
+            st.write(result)
